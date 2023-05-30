@@ -1,0 +1,76 @@
+import numpy as np
+from tensorflow import keras
+import pandas as pd
+# Importing the Boston Housing dataset from the sklearn
+from sklearn.datasets import load_boston
+boston = load_boston()
+
+data = pd.DataFrame(boston.data)
+#First look at the data
+#data=df
+data.head()
+data.columns = boston.feature_names
+#Adding the target variable to the dataset
+data['PRICE'] = boston.target
+#Looking at the data with names and target variable
+data.head(n=10)
+
+print(data.shape)
+#Checking the null values in the dataset
+data.isnull().sum()
+
+data.describe()
+
+#checking the distribution of the target variable
+import seaborn as sns
+sns.distplot(data.PRICE)
+
+correlation = data.corr()
+sns.heatmap(correlation,square = True,annot = True)
+
+# Splitting the dependent feature and independent feature
+X = data[['LSTAT','RM','PTRATIO']]
+from sklearn.model_selection import train_test_split
+y = data.PRICE
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=123)
+X = data.iloc[:,:-1]
+
+mean = X_train.mean(axis=0)
+std = X_train.std(axis=0)
+X_train = (X_train - mean) / std
+X_test = (X_test - mean) / std
+
+#Linear Regression
+from sklearn.linear_model import LinearRegression
+
+regressor = LinearRegression()
+#Fitting the model
+regressor.fit(X_train,y_train)
+# Model Evaluation
+#Prediction on the test dataset
+y_pred = regressor.predict(X_test)
+# Predicting RMSE the Test set results
+from sklearn.metrics import mean_squared_error
+rmse = (np.sqrt(mean_squared_error(y_test,y_pred)))
+print(rmse)
+
+#Creating the neural network model
+import keras
+from keras.layers import Dense, Activation,Dropout
+from keras.models import Sequential
+model = Sequential()
+model.add(Dense(128,activation = 'relu',input_dim =13))
+model.add(Dense(64,activation = 'relu'))
+
+model.add(Dense(32,activation = 'relu'))
+model.add(Dense(16,activation = 'relu'))
+model.add(Dense(1))
+
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+model.summary()
+
+history = model.fit(X_train, y_train, epochs=10, validation_split=0.05, verbose = 1)
+mse_nn, mae_nn = model.evaluate(X_test, y_test)
+
+print('Mean squared error on test data: ', mse_nn)
+print('Mean absolute error on test data: ', mae_nn)
